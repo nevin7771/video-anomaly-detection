@@ -1,0 +1,16 @@
+# UCSD Ped2 preliminary experiment (Review 2)
+data_root: data/raw/UCSDped2
+cache_dir: data/processed
+img_size: [128, 192]      # H, W (native 240x360, aspect ratio kept)
+clip_length: 5            # frames per clip, centred on the scored frame
+batch_size: 32
+epochs: 15
+epochs_cae: 12
+epochs_vit: 20
+epoch_fraction: 0.5     # random half of the training clips per epoch
+lr: 0.001
+threads: 4
+score_patch: 16           # patch size for max-pooled (localised) frame score
+pca_components: 64
+smoothing_sigma: 3        # Gaussian temporal smoothing of frame scores
+keep_maps: [Test002, Test004, Test007]   # save error maps for heat-map figures

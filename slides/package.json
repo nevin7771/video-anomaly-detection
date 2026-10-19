@@ -1,0 +1,7 @@
+{
+  "name": "vad-review-slides",
+  "private": true,
+  "description": "Builds the Review 2 deck from results/",
+  "scripts": { "build": "node build_deck.js" },
+  "dependencies": { "pptxgenjs": "3.12.0" }
+}

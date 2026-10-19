@@ -1,0 +1,9 @@
+{
+  "train_videos": 16,
+  "test_videos": 12,
+  "train_frames": 2550,
+  "test_frames": 2010,
+  "test_anomalous_frames": 1648,
+  "test_anomalous_pct": 82.0,
+  "verified": true
+}

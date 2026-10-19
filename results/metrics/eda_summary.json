@@ -1,0 +1,35 @@
+{
+  "train_videos": 16,
+  "test_videos": 12,
+  "train_frames": 2550,
+  "test_frames": 2010,
+  "test_anomalous_frames": 1648,
+  "test_anomalous_pct": 82.0,
+  "fully_anomalous_test_videos": [
+    "Test008",
+    "Test009",
+    "Test010",
+    "Test011"
+  ],
+  "frame_size_native": [
+    240,
+    360
+  ],
+  "frame_size_model": [
+    128,
+    192
+  ],
+  "motion_energy": {
+    "train_mean": 0.003743111388757825,
+    "test_normal_mean": 0.004748291801661253,
+    "test_anomalous_mean": 0.005700769834220409,
+    "mannwhitney_u": 436207.5,
+    "p_value": 1.3872854796815689e-43,
+    "cohens_d": 0.9286072254180908
+  },
+  "anomaly_area_pct": {
+    "median": 1.214599609375,
+    "p90": 1.81884765625,
+    "max": 4.9072265625
+  }
+}
