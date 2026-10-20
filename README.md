@@ -1,5 +1,7 @@
 # Video Anomaly Detection for Intelligent Surveillance
 
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nevin7771/video-anomaly-detection/blob/main/notebooks/VAD_Colab.ipynb)
+
 MSc Data Science final-year project (24EMDT7218). Unsupervised video anomaly detection: models
 learn *normal* spatio-temporal behaviour from normal-only footage and flag frames they cannot
 reconstruct. Compares a Convolutional Autoencoder (CAE) with a masked Vision-Transformer
@@ -48,9 +50,8 @@ python scripts/train.py --model vit --seed 0     # masked ViT-AE
 python scripts/evaluate.py                       # results/metrics/summary.json, results_table.md, figures
 ```
 
-On Google Colab: `!git clone ...`, `%cd video-anomaly-detection`, `!pip install -r requirements.txt`,
-then `!bash scripts/run_all.sh`. A GPU is optional; `train.py` uses CUDA automatically when one is
-available (`Runtime → Change runtime type → T4 GPU`).
+On Google Colab: open `notebooks/VAD_Colab.ipynb` (badge above, or upload it), switch to a T4 GPU and run
+all cells. `train.py` uses CUDA automatically when a GPU is available.
 
 ## Rebuilding the Review 2 slides
 

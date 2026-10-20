@@ -43,15 +43,14 @@ Quick check that everything works (about 10 min): `EPOCHS=2 SEEDS="0" bash scrip
 
 ## 4. Run it on Google Colab instead (free GPU)
 
-New notebook → `Runtime → Change runtime type → T4 GPU`, then in cells:
+1. Upload `video-anomaly-detection.zip` to Google Drive in a folder called `MSc_VAD` (so the path is `MyDrive/MSc_VAD/video-anomaly-detection.zip`).
+2. Go to colab.research.google.com → `File → Upload notebook` → choose `VAD_Colab.ipynb`.
+3. `Runtime → Change runtime type → T4 GPU → Save`.
+4. `Runtime → Run all`. Allow Google Drive access when asked.
 
-```python
-!git clone https://github.com/nevin7771/video-anomaly-detection.git
-%cd video-anomaly-detection
-!pip install -q -r requirements.txt
-!bash scripts/run_all.sh
-!cat results/metrics/results_table.md
-```
+The notebook downloads the data, trains every model, shows the results table and figures, and saves
+results + trained models to `MyDrive/MSc_VAD/results_<date>/`. Set `QUICK = True` in section 6 for a
+few-minute test run first. Once the code is on GitHub you can set `SOURCE = "github"` instead of using the zip.
 
 ## 5. Run one piece at a time
 
