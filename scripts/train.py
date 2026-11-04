@@ -25,7 +25,7 @@ from torch.utils.data import DataLoader, RandomSampler
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from vad.data import ClipDataset, load_ped2, n_channels  # noqa: E402
+from vad.data import ClipDataset, load_dataset, n_channels  # noqa: E402
 from vad.models import build_model, count_params  # noqa: E402
 
 
@@ -122,7 +122,8 @@ def main():
     motion = not args.no_motion
     run = f"{args.model}{'' if motion else '-nomotion'}_s{args.seed}"
     print(f"[{run}] loading data ...", flush=True)
-    data = load_ped2(ROOT / cfg["data_root"], tuple(cfg["img_size"]), ROOT / cfg["cache_dir"])
+    data = load_dataset(cfg, ROOT)
+    res = ROOT / cfg.get("results_dir", "results")
     keep = tuple(cfg.get("keep_maps", []))
     t0 = time.time()
 
@@ -135,7 +136,7 @@ def main():
         n_params = count_params(model)
         print(f"[{run}] {n_params / 1e6:.2f}M parameters, training {cfg['epochs']} epochs on normal clips only ({DEVICE})", flush=True)
         history = train_torch(model, data["train"], cfg, motion, args.seed)
-        ckpt = ROOT / "checkpoints"; ckpt.mkdir(exist_ok=True)
+        ckpt = ROOT / cfg.get("checkpoint_dir", "checkpoints"); ckpt.mkdir(parents=True, exist_ok=True)
         torch.save({"model": model.state_dict(), "cfg": cfg, "motion": motion}, ckpt / f"{run}.pt")
         def predict(x):
             return model(x.to(DEVICE)).cpu()
@@ -148,7 +149,7 @@ def main():
     n_test = sum(len(v) for v in data["test"].values())
     train_scores, _ = score_videos(predict, data["train"], cfg, motion)
 
-    out = ROOT / "results/scores"; out.mkdir(parents=True, exist_ok=True)
+    out = res / "scores"; out.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
         out / f"{run}.npz",
         test=np.array(test_scores, dtype=object), train=np.array(train_scores, dtype=object),

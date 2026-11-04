@@ -5,6 +5,11 @@ UCSD Ped2 layout (official release v1p2):
     UCSDped2/Test/Test001..Test012/*.tif      test videos (normal + anomalous)
     UCSDped2/Test/TestXXX_gt/*.bmp            pixel-level anomaly masks
     UCSDped2/Test/UCSDped2.m                  frame-level ground truth ranges
+
+CUHK Avenue layout (official Avenue_Dataset.zip + ground_truth_demo.zip):
+    Avenue/training_videos/01.avi..16.avi              normal-only training videos
+    Avenue/testing_videos/01.avi..21.avi               test videos
+    Avenue/**/testing_label_mask/<n>_label.mat         per-frame pixel masks (volLabel)
 """
 from __future__ import annotations
 
@@ -72,6 +77,73 @@ def load_ped2(root: str | Path, size=(128, 192), cache_dir: str | Path | None = 
         cache.parent.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(cache, data=np.array(data, dtype=object))
     return data
+
+
+def _read_video(path: Path, size: tuple[int, int]) -> np.ndarray:
+    cap = cv2.VideoCapture(str(path))
+    h, w = size
+    frames = []
+    while True:
+        ok, img = cap.read()
+        if not ok:
+            break
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        frames.append(cv2.resize(img, (w, h), interpolation=cv2.INTER_AREA))
+    cap.release()
+    if not frames:
+        raise IOError(f"Could not read video {path}")
+    return np.stack(frames).astype(np.uint8)
+
+
+def load_avenue(root: str | Path, size=(128, 224), cache_dir: str | Path | None = None,
+                keep_masks: tuple[str, ...] = ()) -> dict:
+    """Load CUHK Avenue in the same dict format as load_ped2.
+
+    Frame labels come from the pixel masks (a frame is anomalous if any pixel is).
+    Full-resolution masks for ~15k frames do not fit comfortably in memory, so masks
+    are only kept for the videos named in `keep_masks` (used for heat-map figures).
+    """
+    from scipy.io import loadmat
+
+    root = Path(root)
+    cache = None
+    if cache_dir is not None:
+        cache = Path(cache_dir) / f"avenue_{size[0]}x{size[1]}.npz"
+        if cache.exists():
+            return np.load(cache, allow_pickle=True)["data"].item()
+
+    train = {p.stem: _read_video(p, size) for p in sorted((root / "training_videos").glob("*.avi"))}
+    test = {p.stem: _read_video(p, size) for p in sorted((root / "testing_videos").glob("*.avi"))}
+    gt_files = {p.name.split("_")[0].zfill(2): p for p in root.rglob("*_label.mat")
+                if p.parent.name == "testing_label_mask"}
+    labels, masks = {}, {}
+    h, w = size
+    for name, frames in test.items():
+        if name not in gt_files:
+            raise FileNotFoundError(f"No ground-truth mask file for Avenue test video {name}")
+        vol = loadmat(gt_files[name])["volLabel"].ravel()
+        n = min(len(vol), len(frames))  # a few videos decode one frame more than the masks
+        test[name] = frames[:n]
+        labels[name] = np.array([int(np.asarray(m).any()) for m in vol[:n]], dtype=np.uint8)
+        if name in keep_masks:
+            masks[name] = np.stack([cv2.resize(np.asarray(m, np.uint8), (w, h), interpolation=cv2.INTER_NEAREST)
+                                    for m in vol[:n]]).astype(np.uint8)
+    data = {"train": train, "test": test, "labels": labels, "masks": masks, "size": size}
+    if cache is not None:
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        np.savez_compressed(cache, data=np.array(data, dtype=object))
+    return data
+
+
+def load_dataset(cfg: dict, root: Path) -> dict:
+    """Dispatch on cfg['dataset'] (default 'ped2'); paths in cfg are relative to `root`."""
+    name = cfg.get("dataset", "ped2")
+    size, cache = tuple(cfg["img_size"]), root / cfg["cache_dir"]
+    if name == "ped2":
+        return load_ped2(root / cfg["data_root"], size, cache)
+    if name == "avenue":
+        return load_avenue(root / cfg["data_root"], size, cache, tuple(cfg.get("keep_maps", [])))
+    raise ValueError(f"Unknown dataset {name!r}")
 
 
 def clip_indices(n: int, t: int, length: int) -> np.ndarray:

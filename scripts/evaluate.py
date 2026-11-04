@@ -14,6 +14,7 @@ Usage: python scripts/evaluate.py
 """
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
@@ -27,7 +28,7 @@ from sklearn.metrics import roc_curve
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from vad import plotstyle as ps  # noqa: E402
-from vad.data import load_ped2  # noqa: E402
+from vad.data import load_dataset  # noqa: E402
 from vad.metrics import (bootstrap_auc, frame_metrics, minmax, separation_stats, smooth,  # noqa: E402
                          threshold_metrics)
 
@@ -38,9 +39,9 @@ ORDER = ["pca", "cae-nomotion", "cae", "vit"]
 PRIMARY = ("patch_max", "global")
 
 
-def load_runs():
+def load_runs(res: Path):
     runs = {}
-    for f in sorted((ROOT / "results/scores").glob("*.npz")):
+    for f in sorted((res / "scores").glob("*.npz")):
         z = np.load(f, allow_pickle=True)
         runs[f.stem] = {k: z[k].item() for k in ("test", "train", "maps", "meta")}
     return runs
@@ -56,13 +57,18 @@ def video_scores(run, labels, key, protocol, sigma):
 
 
 def main():
-    cfg = yaml.safe_load(open(ROOT / "configs/ped2.yaml"))
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--config", default=str(ROOT / "configs/ped2.yaml"))
+    cfg = yaml.safe_load(open(ap.parse_args().config))
+    res_name = cfg.get("results_dir", "results")
+    res = ROOT / res_name
+    title = cfg.get("title", "UCSD Ped2")
     sigma = cfg["smoothing_sigma"]
-    data = load_ped2(ROOT / cfg["data_root"], tuple(cfg["img_size"]), ROOT / cfg["cache_dir"])
+    data = load_dataset(cfg, ROOT)
     labels = data["labels"]
-    runs = load_runs()
+    runs = load_runs(res)
     if not runs:
-        sys.exit("No runs in results/scores/. Train first (bash scripts/run_all.sh).")
+        sys.exit(f"No runs in {res}/scores/. Train first (bash scripts/run_all.sh).")
 
     rows = []
     for rname, run in runs.items():
@@ -107,7 +113,7 @@ def main():
                             "params": meta["params"], "fps_cpu": meta["fps"], "train_sec": meta["train_sec"],
                             "epochs": meta["epochs"], "history": meta["history"]}
 
-    out = ROOT / "results/metrics"; out.mkdir(parents=True, exist_ok=True)
+    out = res / "metrics"; out.mkdir(parents=True, exist_ok=True)
     json.dump({"primary_protocol": list(PRIMARY), "table": table, "primary": primary, "runs": rows}, open(out / "summary.json", "w"), indent=2)
 
     # Markdown table
@@ -118,7 +124,7 @@ def main():
     (out / "results_table.md").write_text("\n".join(md) + "\n")
     print("\n".join(md))
 
-    fig_dir = ps.figure_dir(ROOT)
+    fig_dir = ps.figure_dir(ROOT, res_name)
     variants = [v for v in ORDER if v in primary]
 
     # Fig: AUC per model (primary protocol, mean ± std across seeds)
@@ -132,7 +138,7 @@ def main():
         ax.text(v + errs[i] + 0.6, i, f"{v:.1f}", va="center", fontsize=11, color=ps.INK, fontweight="bold")
     ax.axvline(90, color=ps.INK2, ls="--", lw=1); ax.text(90.2, len(vals) - 0.45, "target 90", fontsize=9, color=ps.INK2)
     ax.set_xlim(50, 102); ax.set_xlabel("Frame-level AUC-ROC (%)"); ax.invert_yaxis(); ax.grid(axis="y", visible=False)
-    ax.set_title("UCSD Ped2 · frame-level AUC by model")
+    ax.set_title(f"{title} · frame-level AUC by model")
     fig.savefig(fig_dir / "auc_by_model.png"); plt.close(fig)
 
     # Fig: ROC curves
@@ -142,7 +148,7 @@ def main():
         fpr, tpr, _ = roc_curve(np.concatenate(ys), np.concatenate(ss))
         ax.plot(fpr, tpr, color=ps.SERIES[v], label=f"{ps.LABELS[v]} ({100 * primary[v]['auc']:.1f})")
     ax.plot([0, 1], [0, 1], color=ps.GRID, ls="--", lw=1)
-    ax.set_xlabel("False positive rate"); ax.set_ylabel("True positive rate"); ax.set_title("ROC · UCSD Ped2")
+    ax.set_xlabel("False positive rate"); ax.set_ylabel("True positive rate"); ax.set_title(f"ROC · {title}")
     ax.legend(loc="lower right", fontsize=9)
     fig.savefig(fig_dir / "roc_curves.png"); plt.close(fig)
 
@@ -169,7 +175,8 @@ def main():
     for name in vids:
         if name in brun["maps"]:
             y = labels[name]; idx = np.where(y == 1)[0]
-            rows_.append((name, int(idx[len(idx) // 2])))
+            if len(idx) and name in data["masks"]:
+                rows_.append((name, int(idx[len(idx) // 2])))
     if rows_:
         fig, axes = plt.subplots(len(rows_), 3, figsize=(11, 2.7 * len(rows_)))
         axes = np.atleast_2d(axes)

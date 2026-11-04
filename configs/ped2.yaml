@@ -1,4 +1,6 @@
 # UCSD Ped2 preliminary experiment (Review 2)
+dataset: ped2
+title: UCSD Ped2
 data_root: data/raw/UCSDped2
 cache_dir: data/processed
 img_size: [128, 192]      # H, W (native 240x360, aspect ratio kept)

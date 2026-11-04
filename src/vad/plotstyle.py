@@ -23,8 +23,8 @@ LABELS = {"pca": "PCA baseline", "cae-nomotion": "CAE (appearance only)", "cae":
           "vit": "Masked ViT-AE + motion"}
 
 
-def figure_dir(root: Path) -> Path:
-    d = root / "results/figures" / ("dark" if DARK else "")
+def figure_dir(root: Path, results: str = "results") -> Path:
+    d = root / results / "figures" / ("dark" if DARK else "")
     d.mkdir(parents=True, exist_ok=True)
     return d
 
