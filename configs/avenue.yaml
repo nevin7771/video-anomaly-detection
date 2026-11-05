@@ -1,0 +1,20 @@
+# CUHK Avenue (final report): identical pipeline and hyper-parameters to Ped2
+dataset: avenue
+title: CUHK Avenue
+data_root: data/raw/Avenue
+cache_dir: data/processed
+results_dir: results/avenue   # keeps Avenue outputs separate from the Ped2 results
+checkpoint_dir: checkpoints/avenue
+img_size: [128, 224]      # H, W (native 360x640, aspect ratio kept, divisible by 16)
+clip_length: 5
+batch_size: 32
+epochs: 15
+epochs_cae: 12
+epochs_vit: 20
+epoch_fraction: 0.15    # Avenue has ~6x more training frames than Ped2; keeps steps per epoch similar
+lr: 0.001
+threads: 4
+score_patch: 16
+pca_components: 64
+smoothing_sigma: 3
+keep_maps: ["04", "05", "15"]   # save error maps for heat-map figures

@@ -17,3 +17,4 @@ for s in $SEEDS; do
   python scripts/train.py --model vit --seed "$s" $EP
 done
 python scripts/evaluate.py
+python scripts/analyse_errors.py

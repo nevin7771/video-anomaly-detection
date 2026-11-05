@@ -16,11 +16,14 @@ src/vad/models.py          ConvAutoencoder and MaskedViTAutoencoder
 src/vad/metrics.py         AUC-ROC, EER, PR-AUC, bootstrap CI, Mann-Whitney U, thresholding
 src/vad/plotstyle.py       shared figure style
 scripts/download_ped2.sh   downloads UCSD Ped2 into data/raw/
+scripts/download_avenue.sh downloads CUHK Avenue into data/raw/ (official CUHK host)
 scripts/prepare_data.py    integrity check + cached tensors
 scripts/eda.py             exploratory analysis figures
 scripts/train.py           train one model on normal clips, score every test frame
 scripts/evaluate.py        metrics tables + result figures
-scripts/run_all.sh         the whole pipeline end to end
+scripts/analyse_errors.py  event-level misses, detection delay, false alarms per hour
+scripts/run_all.sh         the whole Ped2 pipeline end to end
+scripts/run_avenue.sh      the same pipeline on CUHK Avenue (outputs in results/avenue/)
 docs/literature_review.md  literature review, conceptual framework, references
 results/                   metrics (JSON/Markdown) and figures from the last run
 ```
@@ -36,6 +39,9 @@ bash scripts/run_all.sh                               # everything: data -> EDA 
 ```
 
 Smoke test (2 epochs, 1 seed, ~10 min on CPU): `EPOCHS=2 SEEDS="0" bash scripts/run_all.sh`
+
+CUHK Avenue (GPU recommended, e.g. Colab section 10): `bash scripts/run_avenue.sh`. Every script takes
+`--config configs/avenue.yaml`; results go to `results/avenue/` so the Ped2 results stay untouched.
 
 Step by step:
 
@@ -78,5 +84,5 @@ cd slides && npm install && node build_deck.js   # writes slides/Video_Anomaly_D
 | Dataset | Status | Notes |
 |---|---|---|
 | UCSD Ped2 (Mahadevan et al., 2010) | downloaded, verified | development benchmark, 16 train / 12 test videos |
-| CUHK Avenue (Lu et al., 2013) | next | same pipeline, second benchmark |
+| CUHK Avenue (Lu et al., 2013) | pipeline ready, run in Colab | same pipeline and hyper-parameters, 16 train / 21 test videos |
 | ComplexVAD (Mumcu et al., 2025, MERL) | licence request | 39 GB, 34 h, 40 interaction anomaly types |
